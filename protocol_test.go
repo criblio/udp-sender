@@ -66,18 +66,19 @@ func buildPacketBytes(version byte, srcIP net.IP, destIP net.IP, srcPort, destPo
 	buf.WriteByte(MagicByte2)
 	buf.WriteByte(MagicByte3)
 
-	// Version
+	// Flags
 	buf.WriteByte(version)
 
 	// Source IP
-	if version == 4 {
+	isIPv6 := (version & FlagIPv6) != 0
+	if !isIPv6 {
 		buf.Write(srcIP.To4())
 	} else {
 		buf.Write(srcIP.To16())
 	}
 
 	// Destination IP
-	if version == 4 {
+	if !isIPv6 {
 		buf.Write(destIP.To4())
 	} else {
 		buf.Write(destIP.To16())
@@ -101,7 +102,7 @@ func TestProcessInputStream_IPv4_SinglePacket(t *testing.T) {
 	destIP := net.ParseIP("8.8.8.8").To4()
 	payload := []byte("test data")
 
-	packetData := buildPacketBytes(4, srcIP, destIP, 12345, 53, payload)
+	packetData := buildPacketBytes(0, srcIP, destIP, 12345, 53, payload)
 	reader := bytes.NewReader(packetData)
 
 	var logBuf bytes.Buffer
@@ -147,7 +148,7 @@ func TestProcessInputStream_IPv6_SinglePacket(t *testing.T) {
 	destIP := net.ParseIP("2001:db8::2")
 	payload := []byte("ipv6 test")
 
-	packetData := buildPacketBytes(6, srcIP, destIP, 54321, 80, payload)
+	packetData := buildPacketBytes(FlagIPv6, srcIP, destIP, 54321, 80, payload)
 	reader := bytes.NewReader(packetData)
 
 	var logBuf bytes.Buffer
@@ -193,7 +194,7 @@ func TestProcessInputStream_MultiplePackets(t *testing.T) {
 	}
 
 	for _, pkt := range packets {
-		buf.Write(buildPacketBytes(4, pkt.srcIP, pkt.destIP, pkt.srcPort, pkt.destPort, []byte(pkt.payload)))
+		buf.Write(buildPacketBytes(0, pkt.srcIP, pkt.destIP, pkt.srcPort, pkt.destPort, []byte(pkt.payload)))
 	}
 
 	var logBuf bytes.Buffer
@@ -223,7 +224,7 @@ func TestProcessInputStream_EmptyPayload(t *testing.T) {
 	destIP := net.ParseIP("192.168.1.2").To4()
 	payload := []byte{}
 
-	packetData := buildPacketBytes(4, srcIP, destIP, 1234, 5678, payload)
+	packetData := buildPacketBytes(0, srcIP, destIP, 1234, 5678, payload)
 	reader := bytes.NewReader(packetData)
 
 	var logBuf bytes.Buffer
@@ -283,24 +284,26 @@ func TestProcessInputStream_InvalidMagicNumber(t *testing.T) {
 	}
 }
 
-func TestProcessInputStream_InvalidVersion(t *testing.T) {
-	buf := &bytes.Buffer{}
-	buf.WriteByte(MagicByte1)
-	buf.WriteByte(MagicByte2)
-	buf.WriteByte(MagicByte3)
-	buf.WriteByte(5) // Invalid version (not 4 or 6)
+func TestProcessInputStream_UnknownFlagsAccepted(t *testing.T) {
+	// Flags byte with IPv6 bit set plus an unknown high bit
+	flags := byte(FlagIPv6 | 0x80)
+	srcIP := net.ParseIP("2001:db8::1")
+	destIP := net.ParseIP("2001:db8::2")
+	payload := []byte("ipv6 test")
+
+	packetData := buildPacketBytes(flags, srcIP, destIP, 54321, 80, payload)
+	reader := bytes.NewReader(packetData)
 
 	var logBuf bytes.Buffer
 	logger := &Logger{output: &logBuf, minLevel: LogLevelDebug}
 	sender := &mockSender{}
 
-	err := processInputStream(logger, sender, buf)
-	if err == nil {
-		t.Fatal("Expected error for invalid version")
+	err := processInputStream(logger, sender, reader)
+	if err != nil {
+		t.Fatalf("processInputStream failed with unknown flags set: %v", err)
 	}
-
-	if !strings.Contains(err.Error(), "invalid IP version") {
-		t.Errorf("Expected 'invalid IP version' error, got: %v", err)
+	if len(sender.packets) != 1 {
+		t.Fatalf("Expected 1 packet, got %d", len(sender.packets))
 	}
 }
 
@@ -327,7 +330,7 @@ func TestProcessInputStream_IncompleteStream_Version(t *testing.T) {
 	buf.WriteByte(MagicByte1)
 	buf.WriteByte(MagicByte2)
 	buf.WriteByte(MagicByte3)
-	// Missing version byte
+	// Missing flags byte
 
 	var logBuf bytes.Buffer
 	logger := &Logger{output: &logBuf, minLevel: LogLevelDebug}
@@ -338,8 +341,8 @@ func TestProcessInputStream_IncompleteStream_Version(t *testing.T) {
 		t.Fatal("Expected error for incomplete stream")
 	}
 
-	if !strings.Contains(err.Error(), "reading version byte") {
-		t.Errorf("Expected 'reading version byte' error, got: %v", err)
+	if !strings.Contains(err.Error(), "reading flags byte") {
+		t.Errorf("Expected 'reading flags byte' error, got: %v", err)
 	}
 }
 
@@ -348,7 +351,7 @@ func TestProcessInputStream_IncompleteStream_IPv4SourceIP(t *testing.T) {
 	buf.WriteByte(MagicByte1)
 	buf.WriteByte(MagicByte2)
 	buf.WriteByte(MagicByte3)
-	buf.WriteByte(4)            // IPv4
+	buf.WriteByte(0)            // IPv4
 	buf.Write([]byte{192, 168}) // Only 2 bytes of IP instead of 4
 
 	var logBuf bytes.Buffer
@@ -370,7 +373,7 @@ func TestProcessInputStream_IncompleteStream_IPv6SourceIP(t *testing.T) {
 	buf.WriteByte(MagicByte1)
 	buf.WriteByte(MagicByte2)
 	buf.WriteByte(MagicByte3)
-	buf.WriteByte(6)           // IPv6
+	buf.WriteByte(FlagIPv6)    // IPv6
 	buf.Write(make([]byte, 8)) // Only 8 bytes instead of 16
 
 	var logBuf bytes.Buffer
@@ -392,7 +395,7 @@ func TestProcessInputStream_IncompleteStream_DestIP(t *testing.T) {
 	buf.WriteByte(MagicByte1)
 	buf.WriteByte(MagicByte2)
 	buf.WriteByte(MagicByte3)
-	buf.WriteByte(4)                            // IPv4
+	buf.WriteByte(0)                            // IPv4
 	buf.Write(net.ParseIP("192.168.1.1").To4()) // Full source IP
 	buf.Write([]byte{10, 0})                    // Incomplete dest IP
 
@@ -418,7 +421,7 @@ func TestProcessInputStream_IncompleteStream_SourcePort(t *testing.T) {
 	buf.WriteByte(MagicByte1)
 	buf.WriteByte(MagicByte2)
 	buf.WriteByte(MagicByte3)
-	buf.WriteByte(4)
+	buf.WriteByte(0)
 	buf.Write(srcIP)
 	buf.Write(destIP)
 	buf.WriteByte(0x12) // Only 1 byte of port
@@ -445,7 +448,7 @@ func TestProcessInputStream_IncompleteStream_DestPort(t *testing.T) {
 	buf.WriteByte(MagicByte1)
 	buf.WriteByte(MagicByte2)
 	buf.WriteByte(MagicByte3)
-	buf.WriteByte(4)
+	buf.WriteByte(0)
 	buf.Write(srcIP)
 	buf.Write(destIP)
 	_ = binary.Write(buf, binary.BigEndian, uint16(12345)) // Source port
@@ -473,7 +476,7 @@ func TestProcessInputStream_IncompleteStream_PayloadLength(t *testing.T) {
 	buf.WriteByte(MagicByte1)
 	buf.WriteByte(MagicByte2)
 	buf.WriteByte(MagicByte3)
-	buf.WriteByte(4)
+	buf.WriteByte(0)
 	buf.Write(srcIP)
 	buf.Write(destIP)
 	_ = binary.Write(buf, binary.BigEndian, uint16(12345))
@@ -621,7 +624,7 @@ func TestProcessInputStream_MTUExceeded(t *testing.T) {
 	}{
 		{
 			name:            "IPv4 packet exceeds MTU",
-			version:         4,
+			version:         0,
 			srcIP:           net.ParseIP("192.168.1.1"),
 			destIP:          net.ParseIP("192.168.1.2"),
 			payloadSize:     2000, // Exceeds 1472 byte limit
@@ -630,7 +633,7 @@ func TestProcessInputStream_MTUExceeded(t *testing.T) {
 		},
 		{
 			name:            "IPv6 packet exceeds MTU",
-			version:         6,
+			version:         FlagIPv6,
 			srcIP:           net.ParseIP("2001:db8::1"),
 			destIP:          net.ParseIP("2001:db8::2"),
 			payloadSize:     2000, // Exceeds 1452 byte limit
@@ -639,7 +642,7 @@ func TestProcessInputStream_MTUExceeded(t *testing.T) {
 		},
 		{
 			name:            "IPv4 packet within MTU",
-			version:         4,
+			version:         0,
 			srcIP:           net.ParseIP("192.168.1.1"),
 			destIP:          net.ParseIP("192.168.1.2"),
 			payloadSize:     1000, // Within 1472 byte limit
@@ -648,7 +651,7 @@ func TestProcessInputStream_MTUExceeded(t *testing.T) {
 		},
 		{
 			name:            "IPv6 packet within MTU",
-			version:         6,
+			version:         FlagIPv6,
 			srcIP:           net.ParseIP("2001:db8::1"),
 			destIP:          net.ParseIP("2001:db8::2"),
 			payloadSize:     1000, // Within 1452 byte limit

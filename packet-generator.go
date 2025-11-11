@@ -31,7 +31,7 @@ type Packet struct {
 }
 
 // WriteTo writes the packet to the output in binary format
-// Format: [Magic(3)][Version(1)][SrcIP(4/16)][DestIP(4/16)][SrcPort(2)][DestPort(2)][PayloadLen(2)][Payload(N)]
+// Format: [Magic(3)][Flags(1)][SrcIP(4/16)][DestIP(4/16)][SrcPort(2)][DestPort(2)][PayloadLen(2)][Payload(N)]
 func (p *Packet) WriteTo(w *os.File) error {
 	// Write magic number for synchronization
 	if _, err := w.Write([]byte{MagicByte1, MagicByte2, MagicByte3}); err != nil {
@@ -41,15 +41,13 @@ func (p *Packet) WriteTo(w *os.File) error {
 	// Determine IP version
 	isIPv6 := p.SrcIP.To4() == nil
 
-	// Write version byte
-	var version byte
+	// Write flags byte (bitfield)
+	var flags byte
 	if isIPv6 {
-		version = 6
-	} else {
-		version = 4
+		flags |= FlagIPv6
 	}
-	if _, err := w.Write([]byte{version}); err != nil {
-		return fmt.Errorf("writing version byte: %w", err)
+	if _, err := w.Write([]byte{flags}); err != nil {
+		return fmt.Errorf("writing flags byte: %w", err)
 	}
 
 	// Write source IP

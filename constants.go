@@ -7,6 +7,13 @@ const (
 	MagicByte3 = 0xB1
 )
 
+// Protocol flags bitfield
+// Bit 0: IP version flag (0 = IPv4, 1 = IPv6)
+// Bits 1-7: reserved for future use
+const (
+	FlagIPv6 = 0x01
+)
+
 // MTU (Maximum Transmission Unit) constants
 const (
 	// DefaultMTU is the standard Ethernet MTU (1500 bytes)

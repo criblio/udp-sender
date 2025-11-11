@@ -40,21 +40,17 @@ func processInputStream(logger *Logger, sender PacketSender, input io.Reader) er
 				magicBytes[0], magicBytes[1], magicBytes[2], MagicByte1, MagicByte2, MagicByte3)
 		}
 
-		// Read version byte
-		var versionByte [1]byte
-		if _, err := io.ReadFull(reader, versionByte[:]); err != nil {
-			return fmt.Errorf("reading version byte: %w", err)
+		// Read flags byte (bitfield)
+		var flagsByte [1]byte
+		if _, err := io.ReadFull(reader, flagsByte[:]); err != nil {
+			return fmt.Errorf("reading flags byte: %w", err)
 		}
-		version := versionByte[0]
-
-		// Validate version
-		if version != 4 && version != 6 {
-			return fmt.Errorf("invalid IP version: %d (must be 4 or 6)", version)
-		}
+		flags := flagsByte[0]
+		isIPv6 := (flags & FlagIPv6) != 0
 
 		// Read source IP based on version
 		var srcIP net.IP
-		if version == 4 {
+		if !isIPv6 {
 			// IPv4: 4 bytes
 			var srcIPBytes [4]byte
 			if _, err := io.ReadFull(reader, srcIPBytes[:]); err != nil {
@@ -72,7 +68,7 @@ func processInputStream(logger *Logger, sender PacketSender, input io.Reader) er
 
 		// Read destination IP based on version (same size as source)
 		var destIP net.IP
-		if version == 4 {
+		if !isIPv6 {
 			// IPv4: 4 bytes
 			var destIPBytes [4]byte
 			if _, err := io.ReadFull(reader, destIPBytes[:]); err != nil {

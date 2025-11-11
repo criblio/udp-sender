@@ -20,7 +20,7 @@ Additional fields are added directly at the top level of the JSON object. If a f
 
 ```json
 {"level":"info","message":"Application starting","time":"2025-10-23T16:31:45.889724Z"}
-{"level":"info","message":"Stream mode: reading packets from stdin","protocol":"[Magic(3)][Version(1)][SrcIP(4/16)][DestIP(4/16)][SrcPort(2)][DestPort(2)][PayloadLen(2)][Payload(N)]","time":"2025-10-23T16:31:45.889952Z"}
+{"level":"info","message":"Reading packets from stdin","protocol":"[Magic(3)][Flags(1)][SrcIP(4/16)][DestIP(4/16)][SrcPort(2)][DestPort(2)][PayloadLen(2)][Payload(N)]","time":"2025-10-23T16:31:45.889952Z"}
 {"bytes_sent":8192,"level":"info","message":"Progress update","packets_sent":100,"time":"2025-10-23T16:31:45.889966Z"}
 {"error":"permission denied","level":"error","message":"Error creating UDP sender","time":"2025-10-23T16:31:45.88999Z"}
 {"bytes_sent":1048576,"level":"info","message":"Stream complete","packets_sent":1000,"time":"2025-10-23T16:31:45.889996Z"}
@@ -60,7 +60,7 @@ General informational messages about normal operation.
 
 **Example:**
 ```json
-{"time":"2025-10-23T16:10:56.880242Z","level":"info","message":"Stream mode: reading packets from stdin","fields":{"protocol":"[Magic(3)][Version(1)][SrcIP(4/16)][DestIP(4/16)][SrcPort(2)][DestPort(2)][PayloadLen(2)][Payload(N)]"}}
+{"time":"2025-10-23T16:10:56.880242Z","level":"info","message":"Reading packets from stdin","fields":{"protocol":"[Magic(3)][Flags(1)][SrcIP(4/16)][DestIP(4/16)][SrcPort(2)][DestPort(2)][PayloadLen(2)][Payload(N)]"}}
 ```
 
 ### warn

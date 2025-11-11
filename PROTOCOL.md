@@ -18,7 +18,7 @@ config:
 ---
 packet-beta
   0-23: "Magic (3B)"
-  24-31: "Version (1B)"
+  24-31: "Flags (1B)"
   32-159: "Source IP (4B/16B)"
   160-287: "Dest IP (4B/16B)"
   288-303: "Src Port (2B)"
@@ -30,7 +30,7 @@ packet-beta
 | Field | Size | Type | Description |
 |-------|------|------|-------------|
 | Magic | 3 bytes | const | Magic number `0xC1 0x21 0xB1` |
-| Version | 1 byte | uint8 | IP version: `4` for IPv4, `6` for IPv6 |
+| Flags | 1 byte | bitfield | Bit 0: IP version flag (`0` = IPv4, `1` = IPv6); Bits 1-7 reserved |
 | Source IP | 4 or 16 bytes | IPv4/IPv6 | Source IP address (4 bytes for IPv4, 16 bytes for IPv6) |
 | Dest IP | 4 or 16 bytes | IPv4/IPv6 | Destination IP address (same size as source) |
 | Source Port | 2 bytes | uint16 | Source port number (big endian) |
@@ -63,11 +63,13 @@ The magic number serves several important purposes:
 - Not all zeros or all ones (avoids accidental matches)
 - Distinctive in hex dumps for easy visual identification
 
-#### Version (1 byte)
+#### Flags (1 byte)
 
-- `0x04` = IPv4 packet (source/destination IPs will be 4 bytes)
-- `0x06` = IPv6 packet (source/destination IPs will be 16 bytes)
-- Any other value is invalid
+- Bit 0 indicates IP version:
+  - `0` = IPv4 (source/destination IPs are 4 bytes)
+  - `1` = IPv6 (source/destination IPs are 16 bytes)
+- Bits 1-7 are reserved for future use and SHOULD be ignored by receivers.
+- Writers MUST set only known bits; readers MUST tolerate unknown bits.
 
 #### Source IP (4 or 16 bytes)
 
@@ -127,7 +129,7 @@ The magic number serves several important purposes:
 Packet with:
 
 - Magic: `0xC1 0x21 0xB1`
-- Version: IPv4
+- Flags: IPv4 (`0x00`)
 - Source: `10.0.0.1:5000`
 - Destination: `192.168.1.100:514`
 - Payload: `"Hello"`
@@ -136,7 +138,7 @@ Binary representation (hexadecimal):
 
 ```text
 C1 21 B1        # Magic: 0xC1 0x21 0xB1
-04              # Version: 4 (IPv4)
+00              # Flags: 0x00 (IPv4)
 0A 00 00 01     # Source IP: 10.0.0.1
 C0 A8 01 64     # Dest IP: 192.168.1.100
 13 88           # Source Port: 5000 (0x1388)
@@ -150,7 +152,7 @@ C0 A8 01 64     # Dest IP: 192.168.1.100
 Packet with:
 
 - Magic: `0xC1 0x21 0xB1`
-- Version: IPv6
+- Flags: IPv6 (`0x01`)
 - Source: `2001:db8::1:5000`
 - Destination: `2001:db8::100:8080`
 - Payload: `"Hello"`
@@ -159,7 +161,7 @@ Binary representation (hexadecimal):
 
 ```text
 C1 21 B1                                         # Magic: 0xC1 0x21 0xB1
-06                                               # Version: 6 (IPv6)
+01                                               # Flags: 0x01 (IPv6)
 20 01 0D B8 00 00 00 00 00 00 00 00 00 00 00 01  # Source IP: 2001:db8::1
 20 01 0D B8 00 00 00 00 00 00 00 00 00 00 01 00  # Dest IP: 2001:db8::100
 13 88                                            # Source Port: 5000
@@ -175,19 +177,19 @@ Three packets in sequence, all to `192.168.1.100:514`:
 **Packet 1:** `10.0.0.1:5000` → `192.168.1.100:514` with payload `"Test 1"`
 
 ```text
-C1 21 B1 04 0A 00 00 01 C0 A8 01 64 13 88 02 02 00 06 54 65 73 74 20 31
+C1 21 B1 00 0A 00 00 01 C0 A8 01 64 13 88 02 02 00 06 54 65 73 74 20 31
 ```
 
 **Packet 2:** `10.0.0.2:5001` → `192.168.1.100:514` with payload `"Test 2"`
 
 ```text
-C1 21 B1 04 0A 00 00 02 C0 A8 01 64 13 89 02 02 00 06 54 65 73 74 20 32
+C1 21 B1 00 0A 00 00 02 C0 A8 01 64 13 89 02 02 00 06 54 65 73 74 20 32
 ```
 
 **Packet 3:** `10.0.0.3:5002` → `192.168.1.100:514` with payload `"Test 3"`
 
 ```text
-C1 21 B1 04 0A 00 00 03 C0 A8 01 64 13 8A 02 02 00 06 54 65 73 74 20 33
+C1 21 B1 00 0A 00 00 03 C0 A8 01 64 13 8A 02 02 00 06 54 65 73 74 20 33
 ```
 
 ### Example 4: Mixed IPv4 and IPv6
@@ -197,13 +199,13 @@ IPv4 and IPv6 packets can be mixed in the same stream:
 **Packet 1:** IPv4 `10.0.0.1:5000` → `192.168.1.100:514` with payload `"IPv4"`
 
 ```text
-C1 21 B1 04 0A 00 00 01 C0 A8 01 64 13 88 02 02 00 04 49 50 76 34
+C1 21 B1 00 0A 00 00 01 C0 A8 01 64 13 88 02 02 00 04 49 50 76 34
 ```
 
 **Packet 2:** IPv6 `2001:db8::1:5000` → `2001:db8::100:8080` with payload `"IPv6"`
 
 ```text
-C1 21 B1 06 20 01 0D B8 00 00 00 00 00 00 00 00 00 00 00 01 20 01 0D B8 00 00 00 00 00 00 00 00 00 00 01 00 13 88 1F 90 00 04 49 50 76 36
+C1 21 B1 01 20 01 0D B8 00 00 00 00 00 00 00 00 00 00 00 01 20 01 0D B8 00 00 00 00 00 00 00 00 00 00 01 00 13 88 1F 90 00 04 49 50 76 36
 ```
 
 ### Example 5: Empty Payload
@@ -212,7 +214,7 @@ Packet with empty payload:
 
 ```text
 C1 21 B1       # Magic: 0xC1 0x21 0xB1
-04             # Version: 4 (IPv4)
+00             # Flags: 0x00 (IPv4)
 0A 00 00 01    # Source IP: 10.0.0.1
 C0 A8 01 64    # Dest IP: 192.168.1.100
 13 88          # Source Port: 5000
@@ -227,7 +229,7 @@ If the magic number is incorrect, the stream is considered corrupted:
 
 ```text
 FF FF FF       # Wrong magic: 0xFF 0xFF 0xFF (instead of 0xC1 0x21 0xB1)
-04             # Version: 4
+00             # Flags: IPv4
 ...
 ```
 
@@ -274,8 +276,8 @@ def write_ipv4_packet(src_ip, src_port, dest_ip, dest_port, payload):
     # Magic bytes (0xC1 0x21 0xB1)
     sys.stdout.buffer.write(bytes([0xC1, 0x21, 0xB1]))
     
-    # Version byte (4 = IPv4)
-    sys.stdout.buffer.write(bytes([4]))
+    # Flags byte (bit 0 = 0 for IPv4)
+    sys.stdout.buffer.write(bytes([0x00]))
     
     # Convert source IP to bytes
     sys.stdout.buffer.write(socket.inet_aton(src_ip))
@@ -296,8 +298,8 @@ def write_ipv6_packet(src_ip, src_port, dest_ip, dest_port, payload):
     # Magic bytes (0xC1 0x21 0xB1)
     sys.stdout.buffer.write(bytes([0xC1, 0x21, 0xB1]))
     
-    # Version byte (6 = IPv6)
-    sys.stdout.buffer.write(bytes([6]))
+    # Flags byte (bit 0 = 1 for IPv6)
+    sys.stdout.buffer.write(bytes([0x01]))
     
     # Convert source IPv6 to bytes
     sys.stdout.buffer.write(socket.inet_pton(socket.AF_INET6, src_ip))
@@ -340,8 +342,8 @@ func writeIPv4Packet(srcIP net.IP, srcPort uint16, payload []byte) {
     // Magic bytes (0xC1 0x21 0xB1)
     os.Stdout.Write([]byte{0xC1, 0x21, 0xB1})
     
-    // Version byte (4 = IPv4)
-    os.Stdout.Write([]byte{4})
+    // Flags byte (IPv4 = 0x00)
+    os.Stdout.Write([]byte{0x00})
     
     // Source IP (4 bytes)
     os.Stdout.Write(srcIP.To4())
@@ -358,8 +360,8 @@ func writeIPv6Packet(srcIP net.IP, srcPort uint16, payload []byte) {
     // Magic bytes (0xC1 0x21 0xB1)
     os.Stdout.Write([]byte{0xC1, 0x21, 0xB1})
     
-    // Version byte (6 = IPv6)
-    os.Stdout.Write([]byte{6})
+    // Flags byte (IPv6 = 0x01)
+    os.Stdout.Write([]byte{0x01})
     
     // Source IP (16 bytes)
     os.Stdout.Write(srcIP.To16())
@@ -405,8 +407,8 @@ function writeIPv4Packet(srcIP, srcPort, payload) {
     // Magic bytes (0xC1 0x21 0xB1)
     process.stdout.write(Buffer.from([0xC1, 0x21, 0xB1]));
     
-    // Version byte (4 = IPv4)
-    process.stdout.write(Buffer.from([4]));
+    // Flags byte (IPv4 = 0x00)
+    process.stdout.write(Buffer.from([0x00]));
     
     // Parse IP
     const ipParts = srcIP.split('.').map(Number);
@@ -429,8 +431,8 @@ function writeIPv6Packet(srcIP, srcPort, payload) {
     // Magic bytes (0xC1 0x21 0xB1)
     process.stdout.write(Buffer.from([0xC1, 0x21, 0xB1]));
     
-    // Version byte (6 = IPv6)
-    process.stdout.write(Buffer.from([6]));
+    // Flags byte (IPv6 = 0x01)
+    process.stdout.write(Buffer.from([0x01]));
     
     // Parse IPv6 (16 bytes)
     const ipBuffer = Buffer.alloc(16);
@@ -464,10 +466,9 @@ Run: `node generate.js | sudo ./udp-sender 514 192.168.1.100`
 The stream processor will terminate with an error if:
 
 1. **Invalid magic number**: Stream is misaligned or corrupted (e.g., `invalid magic number: got [0xFF 0xFF 0xFF], expected [0xC1 0x21 0xB1]`)
-2. **Invalid IP version**: Version byte is not 4 or 6
-3. **EOF encountered mid-packet**: Incomplete packet data
-4. **Read errors**: I/O errors reading from stdin
-5. **Send errors**: Network errors sending packets (except MTU errors, see below)
+2. **EOF encountered mid-packet**: Incomplete packet data
+3. **Read errors**: I/O errors reading from stdin
+4. **Send errors**: Network errors sending packets (except MTU errors, see below)
 
 ### MTU Validation
 
@@ -548,13 +549,13 @@ This indicates the stream has lost synchronization. Common causes:
 - Binary data corruption during transmission
 - Mixing protocols with different magic numbers
 
-**Invalid Version**:
+**Flags Handling**:
 
 ```text
-Error: invalid IP version: 8 (must be 4 or 6)
+Receivers MUST interpret unknown flags as reserved and ignore them.
 ```
 
-This could indicate data corruption or using an incompatible protocol version.
+Only bit 0 determines the IP address family: 0=IPv4, 1=IPv6.
 
 ## Performance
 
@@ -594,15 +595,15 @@ go run packet-generator.go -count 5 2>&1 | \
 
 # Expected output:
 # Generating 5 packets starting from 10.0.0.1:5000...
-# Stream mode: reading packets from stdin...
-# Protocol: [Magic(3)][Version(1)][SrcIP(4 or 16)][SrcPort(2)][PayloadLen(2)][Payload(N)]
+# Reading packets from stdin...
+# Protocol: [Magic(3)][Flags(1)][SrcIP(4 or 16)][SrcPort(2)][PayloadLen(2)][Payload(N)]
 # Complete: generated 5 packets
 # Stream complete: sent 5 packets, XXX bytes total
 ```
 
 ## Limitations
 
-1. **Version field required**: All packets must include the version byte
+1. **Flags field required**: All packets must include the flags byte
 2. **Max payload**: Limited by MTU to prevent fragmentation:
    - **IPv4**: 1472 bytes maximum (default 1500 MTU)
    - **IPv6**: 1452 bytes maximum (default 1500 MTU)
