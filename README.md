@@ -466,7 +466,7 @@ With the default MTU of 1500 bytes:
 
    ```bash
    # Filter for MTU errors
-   ./udp-sender 2>&1 | grep "MTU limit"
+   ./udp-sender | grep "MTU limit"
    ```
 
 **Note**: The application automatically validates and drops oversized packets to prevent fragmentation issues with IP spoofing.

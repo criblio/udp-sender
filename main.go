@@ -71,6 +71,11 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) error {
 		logger = NewLogger()
 	}
 
+	// Report version on startup
+	logger.Info("udp-sender starting", map[string]any{
+		"version": Version,
+	})
+
 	// Calculate max payload sizes based on MTU
 	// IPv4: MTU - 20 (IP header) - 8 (UDP header)
 	// IPv6: MTU - 40 (IPv6 header) - 8 (UDP header)

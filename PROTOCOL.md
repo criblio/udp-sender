@@ -502,7 +502,6 @@ cat packets.bin | sudo ./udp-sender -m 1400
 
 ```json
 {
-  "time": "2025-10-24T10:30:45Z",
   "level": "error",
   "message": "Packet dropped due to MTU limit",
   "packet_number": 42,
@@ -519,7 +518,6 @@ cat packets.bin | sudo ./udp-sender -m 1400
 
 ```json
 {
-  "time": "2025-10-24T10:30:50Z",
   "level": "info",
   "message": "Stream complete",
   "packets_sent": 98,
@@ -560,7 +558,7 @@ Only bit 0 determines the IP address family: 0=IPv4, 1=IPv6.
 ## Performance
 
 - **Buffered I/O**: Uses `bufio.Reader` for efficient reading
-- **Progress feedback**: Shows progress every 100 packets to stderr
+- **Progress feedback**: Shows progress every 100 packets at debug level to stdout
 - **Continuous streaming**: No artificial delays between packets
 - **Memory efficient**: Reads and sends one packet at a time
 
@@ -572,7 +570,7 @@ Only bit 0 determines the IP address family: 0=IPv4, 1=IPv6.
    - **IPv6**: Maximum 1452 bytes (default 1500 MTU)
    - Adjust with `-m` or `--mtu` flag if your network supports different MTU sizes
    - Oversized packets will be automatically dropped with error logging
-3. **Error checking**: Monitor stderr for progress and error messages, including MTU violations
+3. **Error checking**: Monitor stdout for `udp-sender` logs (progress, errors, final stats). The `packet-generator` prints its own progress to stderr.
 4. **Testing**: Test with small packet counts first
 5. **Rate limiting**: Consider adding delays in packet generator for high-volume streams
 6. **Monitor dropped packets**: Check the `packets_dropped` field in final statistics to identify MTU issues
@@ -590,8 +588,8 @@ go run packet-generator.go -count 3 | hexdump -C
 
 ```bash
 # Generate packets and verify they're sent
-go run packet-generator.go -count 5 2>&1 | \
-  sudo ./udp-sender 8080 127.0.0.1 2>&1
+go run packet-generator.go -count 5 | \
+  sudo ./udp-sender 8080 127.0.0.1
 
 # Expected output:
 # Generating 5 packets starting from 10.0.0.1:5000...

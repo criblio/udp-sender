@@ -41,9 +41,6 @@ func TestLogger_OutputFormat(t *testing.T) {
 	if logMap["message"] != "Test info message" {
 		t.Errorf("Expected message 'Test info message', got '%s'", logMap["message"])
 	}
-	if logMap["time"] == nil || logMap["time"] == "" {
-		t.Error("Time field should not be empty")
-	}
 	// Verify additional fields are at top level
 	if logMap["key1"] != "value1" {
 		t.Errorf("Expected key1='value1', got '%v'", logMap["key1"])
@@ -129,10 +126,10 @@ func TestLogger_WithoutFields(t *testing.T) {
 		t.Errorf("Expected message 'Simple message', got '%s'", logMap["message"])
 	}
 
-	// Should only have the core fields (time, level, message)
-	expectedFieldCount := 3
+	// Should only have the core fields (level, message)
+	expectedFieldCount := 2
 	if len(logMap) != expectedFieldCount {
-		t.Errorf("Expected %d fields (time, level, message), got %d: %v", expectedFieldCount, len(logMap), logMap)
+		t.Errorf("Expected %d fields (level, message), got %d: %v", expectedFieldCount, len(logMap), logMap)
 	}
 }
 
@@ -257,14 +254,15 @@ func TestLogger_FieldConflicts(t *testing.T) {
 	}
 
 	// Conflicting fields should be prefixed with underscore
-	if logMap["_time"] != "custom_time" {
-		t.Errorf("Expected _time='custom_time', got '%v'", logMap["_time"])
-	}
 	if logMap["_level"] != "custom_level" {
 		t.Errorf("Expected _level='custom_level', got '%v'", logMap["_level"])
 	}
 	if logMap["_message"] != "custom_message" {
 		t.Errorf("Expected _message='custom_message', got '%v'", logMap["_message"])
+	}
+	// 'time' is no longer a reserved field and should appear as-is
+	if logMap["time"] != "custom_time" {
+		t.Errorf("Expected time='custom_time', got '%v'", logMap["time"])
 	}
 
 	// Non-conflicting fields should be added as-is
@@ -289,25 +287,24 @@ func TestLogger_FieldOrder(t *testing.T) {
 
 	jsonStr := strings.TrimSpace(buf.String())
 
-	// Find positions of the three core fields
-	timePos := strings.Index(jsonStr, `"time":`)
+	// Find positions of the core fields
 	levelPos := strings.Index(jsonStr, `"level":`)
 	messagePos := strings.Index(jsonStr, `"message":`)
 
 	// Verify they exist
-	if timePos == -1 || levelPos == -1 || messagePos == -1 {
+	if levelPos == -1 || messagePos == -1 {
 		t.Fatalf("Missing core fields in JSON output: %s", jsonStr)
 	}
 
-	// Verify they appear in the correct order: time < level < message
-	if timePos >= levelPos || levelPos >= messagePos {
-		t.Errorf("Fields not in correct order. Positions: time=%d, level=%d, message=%d. JSON: %s",
-			timePos, levelPos, messagePos, jsonStr)
+	// Verify they appear in the correct order: level < message
+	if levelPos >= messagePos {
+		t.Errorf("Fields not in correct order. Positions: level=%d, message=%d. JSON: %s",
+			levelPos, messagePos, jsonStr)
 	}
 
-	// Verify time is the first field (position 1, after opening brace)
-	if timePos != 1 {
-		t.Errorf("time should be the first field, but found at position %d. JSON: %s", timePos, jsonStr)
+	// Verify 'level' is the first field (position 1, after opening brace)
+	if levelPos != 1 {
+		t.Errorf("level should be the first field, but found at position %d. JSON: %s", levelPos, jsonStr)
 	}
 }
 
@@ -427,7 +424,7 @@ func TestLogger_Fatal(t *testing.T) {
 	if os.Getenv("TEST_FATAL") == "1" {
 		// This is the subprocess that will call Fatal
 		logger := &Logger{
-			output:   os.Stderr,
+			output:   os.Stdout,
 			minLevel: LogLevelDebug,
 		}
 		logger.Fatal("Fatal error occurred", map[string]any{
@@ -440,9 +437,9 @@ func TestLogger_Fatal(t *testing.T) {
 	cmd := exec.Command(os.Args[0], "-test.run=TestLogger_Fatal")
 	cmd.Env = append(os.Environ(), "TEST_FATAL=1")
 
-	// Capture stderr
-	var stderr bytes.Buffer
-	cmd.Stderr = &stderr
+	// Capture stdout
+	var stdout bytes.Buffer
+	cmd.Stdout = &stdout
 
 	err := cmd.Run()
 
@@ -451,7 +448,7 @@ func TestLogger_Fatal(t *testing.T) {
 		// Expected: process exited with non-zero status
 
 		// Verify the log output was written
-		output := stderr.String()
+		output := stdout.String()
 		if !strings.Contains(output, "Fatal error occurred") {
 			t.Errorf("Expected error message in output, got: %s", output)
 		}
@@ -471,7 +468,7 @@ func TestLogger_Fatalf(t *testing.T) {
 	if os.Getenv("TEST_FATALF") == "1" {
 		// This is the subprocess that will call Fatalf
 		logger := &Logger{
-			output:   os.Stderr,
+			output:   os.Stdout,
 			minLevel: LogLevelDebug,
 		}
 		logger.Fatalf("Fatal error: %s (code: %d)", "connection failed", 500)
@@ -482,9 +479,9 @@ func TestLogger_Fatalf(t *testing.T) {
 	cmd := exec.Command(os.Args[0], "-test.run=TestLogger_Fatalf")
 	cmd.Env = append(os.Environ(), "TEST_FATALF=1")
 
-	// Capture stderr
-	var stderr bytes.Buffer
-	cmd.Stderr = &stderr
+	// Capture stdout
+	var stdout bytes.Buffer
+	cmd.Stdout = &stdout
 
 	err := cmd.Run()
 
@@ -493,7 +490,7 @@ func TestLogger_Fatalf(t *testing.T) {
 		// Expected: process exited with non-zero status
 
 		// Verify the log output was written
-		output := stderr.String()
+		output := stdout.String()
 		if !strings.Contains(output, "Fatal error: connection failed (code: 500)") {
 			t.Errorf("Expected formatted error message in output, got: %s", output)
 		}

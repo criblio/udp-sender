@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"time"
 )
 
 // LogLevel represents the severity of a log message
@@ -33,10 +32,10 @@ type LogEntry struct {
 	Message string   `json:"message"`
 }
 
-// NewLogger creates a new logger that writes to stderr with Info level
+// NewLogger creates a new logger that writes to stdout with Info level
 func NewLogger() *Logger {
 	return &Logger{
-		output:   os.Stderr,
+		output:   os.Stdout,
 		minLevel: LogLevelInfo,
 	}
 }
@@ -44,7 +43,7 @@ func NewLogger() *Logger {
 // NewLoggerWithLevel creates a new logger with a specific minimum log level
 func NewLoggerWithLevel(minLevel LogLevel) *Logger {
 	return &Logger{
-		output:   os.Stderr,
+		output:   os.Stdout,
 		minLevel: minLevel,
 	}
 }
@@ -73,22 +72,17 @@ func (l *Logger) log(level LogLevel, message string, fields map[string]any) {
 		return
 	}
 
-	// Build JSON manually to ensure time, level, and message are first
-	timestamp := time.Now().UTC().Format(time.RFC3339Nano)
-
 	// Manually build JSON with guaranteed field order
 	jsonStr := "{"
 
-	// Add time, level, message first (in that specific order)
-	timeJSON, _ := json.Marshal(timestamp)
+	// Add level, message first (in that specific order)
 	levelJSON, _ := json.Marshal(level)
 	messageJSON, _ := json.Marshal(message)
 
-	jsonStr += fmt.Sprintf("\"time\":%s,\"level\":%s,\"message\":%s", timeJSON, levelJSON, messageJSON)
+	jsonStr += fmt.Sprintf("\"level\":%s,\"message\":%s", levelJSON, messageJSON)
 
 	// Add additional fields, checking for conflicts with reserved fields
 	reservedFields := map[string]bool{
-		"time":    true,
 		"level":   true,
 		"message": true,
 	}
