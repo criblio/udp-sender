@@ -126,7 +126,7 @@ func (s *UDPSender) Send(message string, srcIP net.IP, srcPort uint16, destIP ne
 		packet := s.buildPacket(payload, srcIP, srcPort, destIP, destPort)
 
 		addr6 := &syscall.SockaddrInet6{
-			Port: int(destPort),
+			Port: int(0), // Destination port is not used for IPv6
 		}
 		copy(addr6.Addr[:], destIP.To16())
 
