@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 	"os"
+
+	"github.com/criblio/udp-sender/constants"
 )
 
 // Version is the current version of udp-sender
@@ -27,8 +29,8 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) error {
 	fs.BoolVar(&showVersion, "V", false, "Print version and exit (short)")
 	fs.BoolVar(&verbose, "verbose", false, "Enable verbose logging (debug level)")
 	fs.BoolVar(&verbose, "v", false, "Enable verbose logging (debug level, short)")
-	fs.IntVar(&mtu, "mtu", DefaultMTU, "Maximum Transmission Unit in bytes (default: 1500)")
-	fs.IntVar(&mtu, "m", DefaultMTU, "Maximum Transmission Unit in bytes (default: 1500, short)")
+	fs.IntVar(&mtu, "mtu", constants.DefaultMTU, "Maximum Transmission Unit in bytes (default: 1500)")
+	fs.IntVar(&mtu, "m", constants.DefaultMTU, "Maximum Transmission Unit in bytes (default: 1500, short)")
 
 	fs.Usage = func() {
 		_, _ = fmt.Fprintf(stderr, "Usage: %s [OPTIONS]\n\n", args[0])
@@ -59,8 +61,8 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) error {
 	}
 
 	// Validate MTU
-	if mtu < MinMTU || mtu > MaxMTU {
-		return fmt.Errorf("MTU must be between %d and %d bytes (got %d)", MinMTU, MaxMTU, mtu)
+	if mtu < constants.MinMTU || mtu > constants.MaxMTU {
+		return fmt.Errorf("MTU must be between %d and %d bytes (got %d)", constants.MinMTU, constants.MaxMTU, mtu)
 	}
 
 	// Create logger with appropriate level
@@ -74,8 +76,8 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) error {
 	// Calculate max payload sizes based on MTU
 	// IPv4: MTU - 20 (IP header) - 8 (UDP header)
 	// IPv6: MTU - 40 (IPv6 header) - 8 (UDP header)
-	maxPayloadIPv4 := mtu - IPv4HeaderSize - UDPHeaderSize
-	maxPayloadIPv6 := mtu - IPv6HeaderSize - UDPHeaderSize
+	maxPayloadIPv4 := mtu - constants.IPv4HeaderSize - constants.UDPHeaderSize
+	maxPayloadIPv6 := mtu - constants.IPv6HeaderSize - constants.UDPHeaderSize
 
 	logger.Debug("MTU configuration", map[string]any{
 		"mtu":              mtu,

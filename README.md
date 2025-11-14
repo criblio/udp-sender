@@ -512,7 +512,8 @@ For full testing, run locally with sudo.
 ├── .gitignore                   # Git ignore rules
 ├── .golangci.yml                # Linter configuration
 ├── AUTHORS                      # Project authors and contributors
-├── constants.go                 # Shared protocol constants (magic bytes, MTU limits)
+├── constants/                   # Constants package
+│   └── constants.go            # Shared protocol constants (magic bytes, MTU limits)
 ├── DESIGN.md                    # Class design documentation
 ├── Dockerfile                   # Container image definition
 ├── go.mod                       # Go module definition
@@ -550,7 +551,7 @@ The codebase is organized into focused modules:
 - **sender.go** - Core UDPSender class with PacketSender interface and MTU validation
 - **packet.go** - Low-level packet construction (IPv4/IPv6 headers, UDP headers, checksums)
 - **protocol.go** - Stream protocol processing, validation, and MTU error handling
-- **constants.go** - Shared protocol constants (magic bytes, MTU limits)
+- **constants/** - Shared protocol constants package (magic bytes, MTU limits)
 - **logger.go** - Structured ND-JSON logging implementation
 
 **Testing**:
