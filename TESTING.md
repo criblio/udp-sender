@@ -92,7 +92,7 @@ The CI automatically runs both unit and integration tests:
 - **Runs on:** Ubuntu (standard runner)
 - **Command:** `go test -short -v -race ./...`
 - **Coverage:** Unit tests only (no root privileges)
-- **Matrix:** Go 1.21 and 1.22
+- **Matrix:** Go 1.24 and 1.25
 - **Fast:** ~10-20 seconds
 
 #### 2. Integration Tests (`test-integration` job)
@@ -100,7 +100,7 @@ The CI automatically runs both unit and integration tests:
 - **Runs in:** Docker container with `CAP_NET_RAW` capability
 - **Command:** `go test -v ./...` (full test suite)
 - **Coverage:** All tests including raw socket operations
-- **Single version:** Go 1.21
+- **Single version:** Go 1.24
 - **Slower:** ~30-60 seconds (Docker overhead)
 
 #### 3. Benchmarks (`benchmark` job)
@@ -397,7 +397,7 @@ The integration test job uses Docker with specific Linux capabilities:
 
 ```yaml
 container:
-  image: golang:1.21
+  image: golang:1.24
   options: --cap-add=NET_RAW --cap-add=NET_ADMIN
 ```
 

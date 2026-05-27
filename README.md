@@ -24,7 +24,7 @@ A Go application for sending UDP packets with raw socket support, allowing IP an
 
 ### System Requirements
 
-- Go 1.21 or later
+- Go 1.24 or later
 - **Root/Administrator privileges** or **`CAP_NET_RAW`** (required for raw socket creation)
 - IPv4/6 network support
 
@@ -487,7 +487,7 @@ The project uses GitHub Actions for continuous integration:
 
 ### Workflows
 
-- **Test Job**: Runs on Go 1.21 and 1.22
+- **Test Job**: Runs unit tests on Go 1.24 and 1.25; integration tests in a Go 1.24 container
   - Note: Root-required tests are skipped in CI
 - **Build Job**: Verifies compilation
 - **Lint Job**: Runs golangci-lint

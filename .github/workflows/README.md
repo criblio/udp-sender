@@ -12,7 +12,7 @@ This directory contains GitHub Actions workflows for CI/CD.
 
 **Jobs**:
 
-- **Test**: Runs unit tests on Go 1.24 and 1.25; integration tests run on Go 1.24
+- **Test**: Runs unit tests on Go 1.24 and 1.25 (matrix); integration tests run in a Go 1.24 container only
 - **Build**: Verifies the project builds successfully
 - **Lint**: Runs golangci-lint for code quality
 
