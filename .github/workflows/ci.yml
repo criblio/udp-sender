@@ -54,7 +54,8 @@ jobs:
     name: Integration Tests (With Raw Socket Capabilities)
     runs-on: ubuntu-latest
     container:
-      image: golang:1.24
+      # Pinned for reproducible CI; bump deliberately to pick up Go updates.
+      image: golang:1.24.13
       options: --cap-add=NET_RAW --cap-add=NET_ADMIN
     
     steps:

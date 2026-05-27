@@ -1,5 +1,7 @@
 # Build stage
-FROM golang:1.24-alpine AS builder
+# Pinned to a specific patch version for reproducible builds.
+# Bump deliberately when picking up Go security/bugfix releases.
+FROM golang:1.24.13-alpine AS builder
 
 WORKDIR /build
 

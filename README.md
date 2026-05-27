@@ -314,7 +314,8 @@ The Makefile provides convenient targets for common tasks:
 
 | Target | Description |
 |--------|-------------|
-| `make build` | Build the application (use `VERSION=v1.0.0` to set version) |
+| `make build` | Build a dev binary (keeps debug info, allows CGO) — set `VERSION=v1.0.0` to stamp a version |
+| `make release` | Build a release binary (`CGO_ENABLED=0`, stripped); matches release workflow / Dockerfile output |
 | `make test` | Run tests without root (~81% coverage) |
 | `make test-root` | Run all tests with root privileges (~91% coverage) |
 | `make coverage` | Generate coverage report (without root) |
