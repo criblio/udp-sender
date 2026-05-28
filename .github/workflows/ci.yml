@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go-version: ['1.21', '1.22']
+        go-version: ['1.24', '1.25']
     
     steps:
     - name: Checkout code
@@ -54,7 +54,8 @@ jobs:
     name: Integration Tests (With Raw Socket Capabilities)
     runs-on: ubuntu-latest
     container:
-      image: golang:1.21
+      # Pinned for reproducible CI; bump deliberately to pick up Go updates.
+      image: golang:1.24.13
       options: --cap-add=NET_RAW --cap-add=NET_ADMIN
     
     steps:
@@ -89,7 +90,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
-        go-version: '1.21'
+        go-version: '1.24'
 
     - name: Build
       run: go build -v ./...
@@ -105,7 +106,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
-        go-version: '1.21'
+        go-version: '1.24'
 
     - name: Run golangci-lint
       uses: golangci/golangci-lint-action@v4
@@ -123,7 +124,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
-        go-version: '1.21'
+        go-version: '1.24'
 
     - name: Run benchmarks (short mode - no root)
       run: |

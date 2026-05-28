@@ -24,7 +24,7 @@ A Go application for sending UDP packets with raw socket support, allowing IP an
 
 ### System Requirements
 
-- Go 1.21 or later
+- Go 1.24 or later
 - **Root/Administrator privileges** or **`CAP_NET_RAW`** (required for raw socket creation)
 - IPv4/6 network support
 
@@ -314,7 +314,8 @@ The Makefile provides convenient targets for common tasks:
 
 | Target | Description |
 |--------|-------------|
-| `make build` | Build the application (use `VERSION=v1.0.0` to set version) |
+| `make build` | Build a dev binary (keeps debug info, allows CGO) — set `VERSION=v1.0.0` to stamp a version |
+| `make release` | Build a release binary (`CGO_ENABLED=0`, stripped); matches release workflow / Dockerfile output |
 | `make test` | Run tests without root (~81% coverage) |
 | `make test-root` | Run all tests with root privileges (~91% coverage) |
 | `make coverage` | Generate coverage report (without root) |
@@ -487,7 +488,7 @@ The project uses GitHub Actions for continuous integration:
 
 ### Workflows
 
-- **Test Job**: Runs on Go 1.21 and 1.22
+- **Test Job**: Runs unit tests on Go 1.24 and 1.25; integration tests in a Go 1.24 container
   - Note: Root-required tests are skipped in CI
 - **Build Job**: Verifies compilation
 - **Lint Job**: Runs golangci-lint

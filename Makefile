@@ -1,11 +1,23 @@
-.PHONY: build test test-root coverage coverage-root lint clean run deps help
+.PHONY: build release test test-root coverage coverage-root lint clean run deps help
 
 # Version can be overridden: make build VERSION=v1.0.0
 VERSION ?= dev
 
-# Build the application
+# ldflags for the version stamp (used by all build targets)
+VERSION_LDFLAGS := -X main.Version=$(VERSION)
+
+# ldflags for release builds: strip DWARF + symbol table for smaller binaries
+RELEASE_LDFLAGS := -s -w $(VERSION_LDFLAGS)
+
+# Build the application (dev build: keeps debug info, allows CGO defaults)
+# Use `make release` for stripped, statically-linked production binaries.
 build:
-	go build -ldflags="-X main.Version=$(VERSION)" -o udp-sender .
+	go build -ldflags="$(VERSION_LDFLAGS)" -o udp-sender .
+
+# Build a release binary (CGO disabled, debug info stripped)
+# Matches what release.yml and the Dockerfile produce.
+release:
+	CGO_ENABLED=0 go build -ldflags="$(RELEASE_LDFLAGS)" -o udp-sender .
 
 # Run tests (without root - some tests will skip)
 test:
@@ -63,8 +75,12 @@ deps:
 # Show help
 help:
 	@echo "Available targets:"
-	@echo "  build          - Build the application (set VERSION to override version)"
+	@echo "  build          - Build a dev binary (keeps debug info, allows CGO)"
+	@echo "                   Set VERSION to override version string"
 	@echo "                   Example: make build VERSION=v1.0.0"
+	@echo "  release        - Build a release binary (CGO_ENABLED=0, stripped)"
+	@echo "                   Matches release workflow / Dockerfile output"
+	@echo "                   Example: make release VERSION=v1.0.0"
 	@echo "  test           - Run tests (without root, some will skip)"
 	@echo "  test-root      - Run all tests with root privileges (bypasses cache)"
 	@echo "  coverage       - Run tests with coverage report"

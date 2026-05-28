@@ -23,7 +23,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
-        go-version: '1.21'
+        go-version: '1.24'
 
     - name: Run tests
       run: go test -v ./...
@@ -106,16 +106,16 @@ jobs:
         mkdir -p dist
         
         # Build for Linux x64
-        GOOS=linux GOARCH=amd64 go build -o dist/udp-sender-linux-x64 -ldflags="-s -w -X main.Version=${{ steps.version.outputs.VERSION }}" .
+        CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o dist/udp-sender-linux-x64 -ldflags="-s -w -X main.Version=${{ steps.version.outputs.VERSION }}" .
         
         # Build for Linux ARM64
-        GOOS=linux GOARCH=arm64 go build -o dist/udp-sender-linux-arm64 -ldflags="-s -w -X main.Version=${{ steps.version.outputs.VERSION }}" .
+        CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o dist/udp-sender-linux-arm64 -ldflags="-s -w -X main.Version=${{ steps.version.outputs.VERSION }}" .
         
         # Build for macOS x64
-        GOOS=darwin GOARCH=amd64 go build -o dist/udp-sender-darwin-x64 -ldflags="-s -w -X main.Version=${{ steps.version.outputs.VERSION }}" .
+        CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -o dist/udp-sender-darwin-x64 -ldflags="-s -w -X main.Version=${{ steps.version.outputs.VERSION }}" .
         
         # Build for macOS ARM64 (Apple Silicon)
-        GOOS=darwin GOARCH=arm64 go build -o dist/udp-sender-darwin-arm64 -ldflags="-s -w -X main.Version=${{ steps.version.outputs.VERSION }}" .
+        CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -o dist/udp-sender-darwin-arm64 -ldflags="-s -w -X main.Version=${{ steps.version.outputs.VERSION }}" .
 
     - name: Create compressed archives and checksums
       run: |
