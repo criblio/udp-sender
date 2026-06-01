@@ -1,4 +1,4 @@
-package main
+package constants
 
 // Protocol magic number for packet synchronization and stream alignment detection
 const (

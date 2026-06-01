@@ -8,12 +8,14 @@ import (
 	"syscall"
 	"testing"
 	"time"
+
+	"github.com/criblio/udp-sender/constants"
 )
 
 func TestNewUDPSender(t *testing.T) {
 	requireRoot(t)
 
-	sender, err := NewUDPSender(MaxPayloadIPv4, MaxPayloadIPv6)
+	sender, err := NewUDPSender(constants.MaxPayloadIPv4, constants.MaxPayloadIPv6)
 	if err != nil {
 		t.Fatalf("NewUDPSender() error = %v", err)
 	}
@@ -38,7 +40,7 @@ func TestNewUDPSender(t *testing.T) {
 func TestUDPSender_Send(t *testing.T) {
 	requireRoot(t)
 
-	sender, err := NewUDPSender(MaxPayloadIPv4, MaxPayloadIPv6)
+	sender, err := NewUDPSender(constants.MaxPayloadIPv4, constants.MaxPayloadIPv6)
 	if err != nil {
 		t.Fatalf("Failed to create sender: %v", err)
 	}
@@ -112,7 +114,7 @@ func TestUDPSender_Send(t *testing.T) {
 func TestUDPSender_Close(t *testing.T) {
 	requireRoot(t)
 
-	sender, err := NewUDPSender(MaxPayloadIPv4, MaxPayloadIPv6)
+	sender, err := NewUDPSender(constants.MaxPayloadIPv4, constants.MaxPayloadIPv6)
 	if err != nil {
 		t.Fatalf("Failed to create sender: %v", err)
 	}
@@ -131,7 +133,7 @@ func TestPacketSender_Interface(t *testing.T) {
 
 	// Test that UDPSender implements PacketSender interface
 	var sender PacketSender
-	udpSender, err := NewUDPSender(MaxPayloadIPv4, MaxPayloadIPv6)
+	udpSender, err := NewUDPSender(constants.MaxPayloadIPv4, constants.MaxPayloadIPv6)
 	if err != nil {
 		t.Fatalf("Failed to create sender: %v", err)
 	}
@@ -155,7 +157,7 @@ func TestPacketSender_Interface(t *testing.T) {
 func TestUDPSender_Send_ErrorCases(t *testing.T) {
 	requireRoot(t)
 
-	sender, err := NewUDPSender(MaxPayloadIPv4, MaxPayloadIPv6)
+	sender, err := NewUDPSender(constants.MaxPayloadIPv4, constants.MaxPayloadIPv6)
 	if err != nil {
 		t.Fatalf("Failed to create sender: %v", err)
 	}
@@ -232,7 +234,7 @@ func TestUDPSender_Send_ErrorCases(t *testing.T) {
 func TestUDPSender_Send_IPv6(t *testing.T) {
 	requireIPv6(t)
 
-	sender, err := NewUDPSender(MaxPayloadIPv4, MaxPayloadIPv6)
+	sender, err := NewUDPSender(constants.MaxPayloadIPv4, constants.MaxPayloadIPv6)
 	if err != nil {
 		t.Fatalf("Failed to create sender: %v", err)
 	}
@@ -254,7 +256,7 @@ func TestUDPSender_Send_IPv6(t *testing.T) {
 func TestUDPSender_Close_ErrorHandling(t *testing.T) {
 	requireRoot(t)
 
-	sender, err := NewUDPSender(MaxPayloadIPv4, MaxPayloadIPv6)
+	sender, err := NewUDPSender(constants.MaxPayloadIPv4, constants.MaxPayloadIPv6)
 	if err != nil {
 		t.Fatalf("Failed to create sender: %v", err)
 	}
@@ -314,7 +316,7 @@ func BenchmarkUDPSender_Send(b *testing.B) {
 	serverAddr := conn.LocalAddr().(*net.UDPAddr)
 
 	// Create sender
-	sender, err := NewUDPSender(MaxPayloadIPv4, MaxPayloadIPv6)
+	sender, err := NewUDPSender(constants.MaxPayloadIPv4, constants.MaxPayloadIPv6)
 	if err != nil {
 		b.Fatalf("Failed to create sender: %v", err)
 	}
@@ -371,7 +373,7 @@ func BenchmarkUDPSender_SendVariablePayloadSizes(b *testing.B) {
 
 	serverAddr := conn.LocalAddr().(*net.UDPAddr)
 
-	sender, err := NewUDPSender(MaxPayloadIPv4, MaxPayloadIPv6)
+	sender, err := NewUDPSender(constants.MaxPayloadIPv4, constants.MaxPayloadIPv6)
 	if err != nil {
 		b.Fatalf("Failed to create sender: %v", err)
 	}
@@ -417,7 +419,7 @@ func BenchmarkUDPSender_SendVariablePayloadSizes(b *testing.B) {
 func TestUDPSender_MTUValidation(t *testing.T) {
 	requireRoot(t)
 
-	sender, err := NewUDPSender(MaxPayloadIPv4, MaxPayloadIPv6)
+	sender, err := NewUDPSender(constants.MaxPayloadIPv4, constants.MaxPayloadIPv6)
 	if err != nil {
 		t.Fatalf("Failed to create sender: %v", err)
 	}

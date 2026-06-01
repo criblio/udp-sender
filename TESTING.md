@@ -207,6 +207,8 @@ We use a hybrid approach to maximize test coverage while handling all scenarios 
 **1. IPv6 Availability Detection** (`hasIPv6()` helper):
 
 ```go
+import "github.com/criblio/udp-sender/constants"
+
 func hasIPv6() bool {
     // Try to create an IPv6 raw socket
     fd, err := syscall.Socket(syscall.AF_INET6, syscall.SOCK_RAW, syscall.IPPROTO_RAW)
@@ -216,7 +218,7 @@ func hasIPv6() bool {
     defer syscall.Close(fd)
     
     // Try to send a test packet to ::1 (localhost)
-    sender, _ := NewUDPSender(MaxPayloadIPv4, MaxPayloadIPv6)
+    sender, _ := NewUDPSender(constants.MaxPayloadIPv4, constants.MaxPayloadIPv6)
     _, err = sender.Send("test", net.ParseIP("::1"), 12345, net.ParseIP("::1"), 54321)
     
     return err == nil  // Only return true if routing actually works

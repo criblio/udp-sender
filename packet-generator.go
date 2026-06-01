@@ -12,13 +12,8 @@ import (
 	"log"
 	"net"
 	"os"
-)
 
-// Protocol magic number for packet synchronization and stream alignment detection
-const (
-	MagicByte1 = 0xC1
-	MagicByte2 = 0x21
-	MagicByte3 = 0xB1
+	"github.com/criblio/udp-sender/constants"
 )
 
 // Packet represents a UDP packet to be sent
@@ -34,7 +29,7 @@ type Packet struct {
 // Format: [Magic(3)][Flags(1)][SrcIP(4/16)][DestIP(4/16)][SrcPort(2)][DestPort(2)][PayloadLen(2)][Payload(N)]
 func (p *Packet) WriteTo(w *os.File) error {
 	// Write magic number for synchronization
-	if _, err := w.Write([]byte{MagicByte1, MagicByte2, MagicByte3}); err != nil {
+	if _, err := w.Write([]byte{constants.MagicByte1, constants.MagicByte2, constants.MagicByte3}); err != nil {
 		return fmt.Errorf("writing magic bytes: %w", err)
 	}
 
@@ -44,7 +39,7 @@ func (p *Packet) WriteTo(w *os.File) error {
 	// Write flags byte (bitfield)
 	var flags byte
 	if isIPv6 {
-		flags |= FlagIPv6
+		flags = constants.FlagIPv6
 	}
 	if _, err := w.Write([]byte{flags}); err != nil {
 		return fmt.Errorf("writing flags byte: %w", err)

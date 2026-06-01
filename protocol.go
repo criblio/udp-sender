@@ -7,6 +7,8 @@ import (
 	"io"
 	"net"
 	"strings"
+
+	"github.com/criblio/udp-sender/constants"
 )
 
 // processInputStream reads packets from stdin using the binary protocol.
@@ -35,9 +37,9 @@ func processInputStream(logger *Logger, sender PacketSender, input io.Reader) er
 		}
 
 		// Validate magic number
-		if magicBytes[0] != MagicByte1 || magicBytes[1] != MagicByte2 || magicBytes[2] != MagicByte3 {
+		if magicBytes[0] != constants.MagicByte1 || magicBytes[1] != constants.MagicByte2 || magicBytes[2] != constants.MagicByte3 {
 			return fmt.Errorf("invalid magic number: got [0x%02X 0x%02X 0x%02X], expected [0x%02X 0x%02X 0x%02X] - stream may be misaligned",
-				magicBytes[0], magicBytes[1], magicBytes[2], MagicByte1, MagicByte2, MagicByte3)
+				magicBytes[0], magicBytes[1], magicBytes[2], constants.MagicByte1, constants.MagicByte2, constants.MagicByte3)
 		}
 
 		// Read flags byte (bitfield)
@@ -46,7 +48,7 @@ func processInputStream(logger *Logger, sender PacketSender, input io.Reader) er
 			return fmt.Errorf("reading flags byte: %w", err)
 		}
 		flags := flagsByte[0]
-		isIPv6 := (flags & FlagIPv6) != 0
+		isIPv6 := (flags & constants.FlagIPv6) != 0
 
 		// Read source IP based on version
 		var srcIP net.IP

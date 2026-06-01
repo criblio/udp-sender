@@ -5,6 +5,8 @@ import (
 	"os"
 	"syscall"
 	"testing"
+
+	"github.com/criblio/udp-sender/constants"
 )
 
 // requireRoot skips the test if not running as root/admin or if running in short mode
@@ -40,7 +42,7 @@ func hasIPv6() bool {
 	}
 
 	// Try to actually send a packet to see if routing works
-	sender, err := NewUDPSender(MaxPayloadIPv4, MaxPayloadIPv6)
+	sender, err := NewUDPSender(constants.MaxPayloadIPv4, constants.MaxPayloadIPv6)
 	if err != nil {
 		return false
 	}

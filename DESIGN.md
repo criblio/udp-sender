@@ -225,9 +225,14 @@ graph TB
 ### Direct Instantiation
 
 ```go
-// Calculate max payload sizes based on MTU (e.g., 1500 bytes)
-maxPayloadIPv4 := 1500 - 20 - 8  // 1472 bytes
-maxPayloadIPv6 := 1500 - 40 - 8  // 1452 bytes
+import "github.com/criblio/udp-sender/constants"
+
+// Option 1: Use constants from the constants package
+sender, err := NewUDPSender(constants.MaxPayloadIPv4, constants.MaxPayloadIPv6)
+
+// Option 2: Calculate max payload sizes based on custom MTU (e.g., 1500 bytes)
+maxPayloadIPv4 := 1500 - constants.IPv4HeaderSize - constants.UDPHeaderSize  // 1472 bytes
+maxPayloadIPv6 := 1500 - constants.IPv6HeaderSize - constants.UDPHeaderSize  // 1452 bytes
 
 // Create sender with MTU-based payload limits
 // Creates IPv4 socket (required) and IPv6 socket (if available)
